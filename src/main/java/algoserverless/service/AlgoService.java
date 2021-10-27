@@ -12,6 +12,8 @@ import com.algorand.algosdk.v2.client.model.PendingTransactionResponse;
 import com.algorand.algosdk.v2.client.model.PostTransactionsResponse;
 import com.algorand.algosdk.v2.client.model.TransactionParametersResponse;
 
+import java.math.BigDecimal;
+import java.security.GeneralSecurityException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Optional;
 
@@ -20,32 +22,62 @@ public class AlgoService {
     private AlgodClient algodClient;
     private IndexerClient indexerClient;
 
-
     private Account algoAccount;
     private Address algoAddress;
 
     public AlgoService(String algodApiAddr, Integer algodPort, String algodApiToken,
                        String indexerApiAddr, Integer indexerApiPort) {
+        algodClient = new AlgodClient(algodApiAddr, algodPort, algodApiToken);
+        indexerClient = new IndexerClient(indexerApiAddr, indexerApiPort);
+    }
 
+    public AlgoService(String algodApiAddr, Integer algodPort, String algodApiToken, String indexerApiAddr,
+                       Integer indexerApiPort, String accPassphrase) {
         algodClient = new AlgodClient(algodApiAddr, algodPort, algodApiToken);
         indexerClient = new IndexerClient(indexerApiAddr, indexerApiPort);
 
-    }
-
-    public void initAccount(String accPassphrase, String accAddress) throws Exception {
         try {
             algoAccount = new Account(accPassphrase);
-            algoAddress = new Address(accAddress);
+            algoAddress = algoAccount.getAddress();
         }
-        catch (NoSuchAlgorithmException e) {
-            throw new Exception(e.getMessage());
+        catch (GeneralSecurityException e) {
+            throw new RuntimeException(e.getMessage());
+        }
+    }
+
+    /**
+     * get the Algos owned by address
+     * @param address
+     * @return
+     */
+    public Optional<Long> getAccountAmount(String address) {
+
+        Response<com.algorand.algosdk.v2.client.model.Account> accountResponse;
+        try {
+            Address destAddress = new Address(address);
+            accountResponse = algodClient.AccountInformation(destAddress).execute();
+        }
+        catch (Exception e) {
+            return Optional.empty();
+        }
+
+        if (accountResponse.isSuccessful()) {
+            return Optional.of(accountResponse.body().amount);
+        }
+        else {
+            return Optional.empty();
         }
     }
 
 
-    public String sendAlgo(String receiverAddress, long amount) throws Exception {
-
-        long mAlgoAmount = amount * 1000000L; //converted in microAlgorand
+    /**
+     * Send amount (il Algo) to receiverAddress.
+     * @param receiverAddress
+     * @param amount
+     * @return
+     * @throws Exception
+     */
+    public String sendAlgo(String receiverAddress, Long amount) throws Exception {
 
         Address address = new Address(receiverAddress);
         String note = "AlgoServerless Test";
@@ -54,7 +86,7 @@ public class AlgoService {
                 com.algorand.algosdk.transaction.Transaction.PaymentTransactionBuilder()
                         .sender(algoAddress)
                         .note(note.getBytes())
-                        .amount(mAlgoAmount)
+                        .amount(amount)
                         .receiver(address)
                         .suggestedParams(params)
                         .build();
@@ -108,27 +140,8 @@ public class AlgoService {
             }
         }
 
-        throw new IllegalStateException("Transaction not confirmed after " + timeout + " rounds!");
+        throw new IllegalStateException("Transaction not confirmed after %1" + timeout + " rounds!");
     }
 
-
-    public Optional<Long> getAccountAmount(String address) {
-
-        Response<com.algorand.algosdk.v2.client.model.Account> accountResponse;
-        try {
-            Address destAddress = new Address(address);
-            accountResponse = algodClient.AccountInformation(destAddress).execute();
-        }
-        catch (Exception e) {
-            return Optional.empty();
-        }
-
-        if (accountResponse.isSuccessful()) {
-            return Optional.of(accountResponse.body().amount);
-        }
-        else {
-            return Optional.empty();
-        }
-    }
 
 }
