@@ -3,10 +3,12 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Timeout: 300
-      MemorySize: 320
-      Handler: algoserverless.SendAlgoHandler::handleRequest
+      MemorySize: 128
+      Handler: algoserverless.GetAmountHandler
       CodeUri: Function
       Runtime: java11
+      Architectures:
+      - arm64
       Environment:
         Variables:
           ACC_ADDR: PQ5OIQBSOMQU23S53MMFZG3LZVGIU6SU5TROUMWKXGYBXWLHKLII4R2LNU
@@ -18,3 +20,5 @@ Resources:
           CORE_API_TOKEN: null
           INDEXER_API_ADDR: https://testnet.algoexplorerapi.io/idx2
           INDEXER_API_PORT: 443
+    Metadata:
+      SamResourceId: Function

@@ -3,10 +3,12 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Timeout: 300
-      MemorySize: 320
-      Handler: algoserverless.SendAlgoHandler::handleRequest
-      CodeUri: /Users/david/lab/algorand/projects/algoserverless
+      MemorySize: 128
+      Handler: algoserverless.GetAmountHandler
+      CodeUri: /Users/david/lab/projects/algo-serverless
       Runtime: java11
+      Architectures:
+        - arm64
       Environment:
         Variables:
           ACC_ADDR: PQ5OIQBSOMQU23S53MMFZG3LZVGIU6SU5TROUMWKXGYBXWLHKLII4R2LNU
